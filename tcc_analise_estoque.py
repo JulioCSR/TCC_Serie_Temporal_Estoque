@@ -24,6 +24,7 @@ from prophet import Prophet
 from pmdarima import auto_arima
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
+from prophet.plot import add_changepoints_to_plot
 
 #%% Leitura da base
 
@@ -383,6 +384,15 @@ df_consumo_mensal_inc_04mm_teste = df_consumo_mensal_inc_04mm.iloc[-12:]
 df_consumo_mensal_lam_inc_08mm_treino = df_consumo_mensal_lam_inc_08mm.iloc[:-12]
 df_consumo_mensal_lam_inc_08mm_teste = df_consumo_mensal_lam_inc_08mm.iloc[-12:]
 
+#%% Separar dados de treino 2 e teste 2
+
+#dados de teste e treino 4mm
+df_consumo_mensal_inc_04mm_treino_v2 = df_consumo_mensal_inc_04mm.iloc[:-6]
+df_consumo_mensal_inc_04mm_teste_v2 = df_consumo_mensal_inc_04mm.iloc[-6:]
+
+#dados de teste e treino lam 8mm
+df_consumo_mensal_lam_inc_08mm_treino_v2 = df_consumo_mensal_lam_inc_08mm.iloc[:-6]
+df_consumo_mensal_lam_inc_08mm_teste_v2 = df_consumo_mensal_lam_inc_08mm.iloc[-6:]
 #%% Modelo Prophet 4mm
 
 #criar df para datas treino
@@ -396,7 +406,7 @@ df_prophet_teste['ds'] = df_consumo_mensal_inc_04mm_teste.index
 df_prophet_teste['y'] = df_consumo_mensal_inc_04mm_teste.values
 
 #criar modelo
-modelo_4mm = Prophet(yearly_seasonality=True)
+modelo_4mm = Prophet(yearly_seasonality=True, changepoint_prior_scale=0.1)
 modelo_4mm.fit(df_prophet_treino)
 
 #criando um df de previsão
@@ -415,6 +425,94 @@ plt.show()
 #comparar com o teste
 fig1 =modelo_4mm.plot(df_previsao_inc4mm_treino, figsize=(10, 5))
 plt.plot(df_prophet_teste['ds'],df_prophet_teste['y'], color='red')
+
+#adicionar pontos de tendência detectados
+a = add_changepoints_to_plot(fig1.gca(), modelo_4mm, df_previsao_inc4mm_treino)
+
+plt.title('Previsão Inc 04mm com pontos de tendência', loc='left', fontsize=11)
+plt.xlabel('Data', fontsize=11)
+plt.ylabel('Quantidade', fontsize=11)
+plt.show()
+
+#%%Modelo Prophet 4mm v2
+
+#criar df para datas treino
+df_prophet_treino_v2 = pd.DataFrame()
+df_prophet_treino_v2['ds'] = df_consumo_mensal_inc_04mm_treino.index
+df_prophet_treino_v2['y'] = df_consumo_mensal_inc_04mm_treino.values
+
+#criar df para testes
+df_prophet_teste_v2 = pd.DataFrame()
+df_prophet_teste_v2['ds'] = df_consumo_mensal_inc_04mm_teste.index
+df_prophet_teste_v2['y'] = df_consumo_mensal_inc_04mm_teste.values
+
+#criar modelo
+modelo_4mm_v2 = Prophet(yearly_seasonality=True, changepoint_prior_scale=0.1, seasonality_mode='multiplicative')
+modelo_4mm_v2.fit(df_prophet_treino_v2)
+
+#criando um df de previsão
+df_futuro_inc4mm_treino_v2 = modelo_4mm_v2.make_future_dataframe(periods=12, freq='ME')
+df_previsao_inc4mm_treino_v2 = modelo_4mm_v2.predict(df_futuro_inc4mm_treino_v2)
+
+#gráfico da previsão
+modelo_4mm_v2.plot(df_previsao_inc4mm_treino_v2, figsize=(10, 5))
+plt.title('Previsão Inc 04mm v2',loc='left', fontsize=11)
+plt.xticks(fontsize=10)
+plt.yticks(fontsize=10)
+plt.xlabel('Data', fontsize=11)
+plt.ylabel('Quantidade', fontsize=11)
+plt.show()
+
+fig2 =modelo_4mm_v2.plot(df_previsao_inc4mm_treino_v2, figsize=(10, 5))
+plt.plot(df_prophet_teste_v2['ds'],df_prophet_teste_v2['y'], color='red')
+
+#adicionar pontos de tendência detectados
+a2 = add_changepoints_to_plot(fig2.gca(), modelo_4mm_v2, df_previsao_inc4mm_treino)
+
+plt.title('Previsão Inc 04mm com pontos de tendência', loc='left', fontsize=11)
+plt.xlabel('Data', fontsize=11)
+plt.ylabel('Quantidade', fontsize=11)
+plt.show()
+
+#%% modelo 4mm v3
+
+#criar df para datas treino
+df_prophet_treino_v3 = pd.DataFrame()
+df_prophet_treino_v3['ds'] = df_consumo_mensal_inc_04mm_treino_v2.index
+df_prophet_treino_v3['y'] = df_consumo_mensal_inc_04mm_treino_v2.values
+
+#criar df para testes
+df_prophet_teste_v3 = pd.DataFrame()
+df_prophet_teste_v3['ds'] = df_consumo_mensal_inc_04mm_teste_v2.index
+df_prophet_teste_v3['y'] = df_consumo_mensal_inc_04mm_teste_v2.values
+
+#criar modelo
+modelo_4mm_v3 = Prophet(yearly_seasonality=True, changepoint_prior_scale=0.1,seasonality_mode='multiplicative')
+modelo_4mm_v3.fit(df_prophet_treino_v3)
+
+#criando um df de previsão
+df_futuro_inc4mm_treino_v3 = modelo_4mm_v3.make_future_dataframe(periods=6, freq='ME')
+df_previsao_inc4mm_treino_v3 = modelo_4mm_v3.predict(df_futuro_inc4mm_treino_v3)
+
+#gráfico da previsão
+modelo_4mm_v3.plot(df_previsao_inc4mm_treino_v2, figsize=(10, 5))
+plt.title('Previsão Inc 04mm v3',loc='left', fontsize=11)
+plt.xticks(fontsize=10)
+plt.yticks(fontsize=10)
+plt.xlabel('Data', fontsize=11)
+plt.ylabel('Quantidade', fontsize=11)
+plt.show()
+
+fig3 =modelo_4mm_v3.plot(df_previsao_inc4mm_treino_v3, figsize=(10, 5))
+plt.plot(df_prophet_teste_v3['ds'],df_prophet_teste_v3['y'], color='red')
+
+#adicionar pontos de tendência detectados
+a3 = add_changepoints_to_plot(fig3.gca(), modelo_4mm_v3, df_previsao_inc4mm_treino_v2)
+
+plt.title('Previsão Inc 04mm com pontos de tendência', loc='left', fontsize=11)
+plt.xlabel('Data', fontsize=11)
+plt.ylabel('Quantidade', fontsize=11)
+plt.show()
 
 #%% Modelo Prophet lam 8mm
 #criar df treino 
@@ -450,6 +548,20 @@ n_periodos = len(df_consumo_mensal_inc_04mm_teste)
 # Fazendo a previsão do modelo auto_arima
 previsao_arima_4mm = modelo_arima_4mm.predict(n_periods=n_periodos)
 
+#%% Modelo Arima 4mm
+#%% Com amostra reduzida
+modelo_arima_4mm_v2 = auto_arima(df_consumo_mensal_inc_04mm_treino_v2, seasonal=True, m=12, trace=True)
+
+#ajustar o modelo Arima(0,0,2)(0,0,1)
+mod_4mm_v2 = ARIMA(df_consumo_mensal_inc_04mm_treino_v2, order=(0, 0, 2), seasonal_order=(0, 0, 1, 12)).fit()
+
+print(mod_4mm_v2.summary())
+
+# Número de passos = tamanho do conjunto de teste
+n_periodos_v2 = len(df_consumo_mensal_inc_04mm_teste_v2)
+
+# Fazendo a previsão do modelo auto_arima
+previsao_arima_4mm_v2 = modelo_arima_4mm_v2.predict(n_periods=n_periodos_v2)
 #%% Modelo Arima 8mm
 
 #usar o autoarima
@@ -592,6 +704,24 @@ rmse = np.sqrt(mse)
 erro_relativo = (rmse / df_comparacao['y'].mean()) * 100
 print(f'MSE: {mse}, RMSE: {rmse}, RMSE Relativo: {erro_relativo:.2f}%')
 
+#Prophet v2
+#4mm
+df_4mm_v2 = df_previsao_inc4mm_treino[['ds','yhat']]
+df_comparacao_v2 = pd.merge(df_4mm_v2, df_prophet_teste_v2, on='ds', how='inner')
+mse_v2 = mean_squared_error(df_comparacao_v2['y'],df_comparacao_v2['yhat'])
+rmse_v2 = np.sqrt(mse_v2)
+erro_relativo_v2 = (rmse_v2 / df_comparacao_v2['y'].mean()) * 100
+print(f'MSE: {mse_v2}, RMSE: {rmse_v2}, RMSE Relativo: {erro_relativo_v2:.2f}%')
+
+#Prophet v3
+#4mm
+df_4mm_v3 = df_previsao_inc4mm_treino_v2[['ds','yhat']]
+df_comparacao_v3 = pd.merge(df_4mm_v3, df_prophet_teste_v3, on='ds', how='inner')
+mse_v3 = mean_squared_error(df_comparacao_v3['y'],df_comparacao_v3['yhat'])
+rmse_v3 = np.sqrt(mse_v3)
+erro_relativo_v3 = (rmse_v3 / df_comparacao_v3['y'].mean()) * 100
+print(f'MSE: {mse_v3}, RMSE: {rmse_v3}, RMSE Relativo: {erro_relativo_v3:.2f}%')
+
 #Lam 8mm
 df_lam_inc_8mm = df_previsao_lam_inc_08mm_treino[['ds','yhat']]
 df_comparacao_lam_inc_8mm = pd.merge(df_lam_inc_8mm, df_prophet_lam_inc_08mm_teste, on='ds', how='inner')
@@ -610,6 +740,17 @@ mse_arima_4mm = mean_squared_error(df_comparacao_arima['y'],df_comparacao_arima[
 rmse_arima_4mm = np.sqrt(mse_arima_4mm)
 erro_relativo_arima_4mm = (rmse_arima_4mm / df_comparacao_arima['y'].mean()) * 100
 print(f'MSE: {mse_arima_4mm}, RMSE: {rmse_arima_4mm}, RMSE Relativo: {erro_relativo_arima_4mm:.2f}%')
+
+#Arima v2
+#4mm
+df_arima_4mm_v2 = pd.DataFrame()
+df_arima_4mm_v2['ds'] = previsao_arima_4mm_v2.index
+df_arima_4mm_v2['yhat'] = previsao_arima_4mm_v2[0]
+df_comparacao_arima_v2 = pd.merge(df_arima_4mm_v2, df_prophet_teste_v2, on='ds', how='inner')
+mse_arima_4mm_v2 = mean_squared_error(df_comparacao_arima_v2['y'],df_comparacao_arima_v2['yhat'])
+rmse_arima_4mm_v2 = np.sqrt(mse_arima_4mm_v2)
+erro_relativo_arima_4mm_v2 = (rmse_arima_4mm_v2 / df_comparacao_arima_v2['y'].mean()) * 100
+print(f'MSE: {mse_arima_4mm_v2}, RMSE: {rmse_arima_4mm_v2}, RMSE Relativo: {erro_relativo_arima_4mm_v2:.2f}%')
 
 #lam 8mm
 df_arima_lam_8mm = pd.DataFrame()
@@ -715,6 +856,14 @@ resultados.append({
     })
 
 resultados.append({
+    "Modelo": "ARIMA_v2",
+    "Série": "04mm",
+    "MSE": mse_arima_4mm_v2,
+    "RMSE":  rmse_arima_4mm_v2,
+    "RMSE Relativo (%)": erro_relativo_arima_4mm_v2
+    })
+
+resultados.append({
     "Modelo": "Sarimax",
     "Série": "04mm",
     "MSE": mse_sarimax_4mm,
@@ -762,7 +911,21 @@ resultados.append({
     "RMSE Relativo (%)": erro_relativo_xgb_8mm
     })
 
+resultados.append({
+    "Modelo": "Prophet_v2",
+    "Série": "04mm",
+    "MSE": mse,
+    "RMSE": rmse,
+    "RMSE Relativo (%)": erro_relativo
+    })
+
 # Criar dataframe final
 df_resultados = pd.DataFrame(resultados)
 
 print(df_resultados)
+
+#passar para o excel
+df_resultados.to_excel("resultados.xlsx")
+
+
+
